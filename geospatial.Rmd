@@ -1,0 +1,125 @@
+---
+title: "GeoSpatial"
+author: "Muxuan Lyu"
+date: "May 28, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+```{r load packages}
+library(broom)
+library(stringr)
+library(modelr)
+library(forcats)
+library(ggmap)
+library(ggthemes)
+library(tidyverse)
+library(plotly)
+```
+
+```{r}
+map_world <- map_data("world") %>%
+  as.tibble() %>%
+  select(-4,-6)
+```
+
+```{r}
+all_df <- read.csv("all_lifeexp.csv", check.names=FALSE)
+names(all_df)[c(1)] = c("region")
+all_df <- all_df %>% mutate(type = "all")
+
+```
+
+
+```{r}
+female_df <- read.csv("female.csv", check.names=FALSE)
+names(female_df )[c(1)] = c("region")
+female_df  <- female_df  %>% mutate(type = "female") %>% select(-c("2017"))
+
+```
+
+
+
+```{r}
+male_df <- read.csv("male.csv", check.names=FALSE)
+names(male_df )[c(1)] = c("region")
+male_df  <- male_df  %>% mutate(type = "male") %>% select(-c("2017"))
+```
+
+
+```{r}
+male_2016 <- male_final %>% filter(Year == 2016)
+female_2016 <- female_final %>% filter(Year == 2016)
+
+gd2016_df <- rbind(female_2016, male_2016)
+```
+
+
+
+```{r}
+all_final <- left_join(map_world, all_df, by = "region")
+all_final <- all_final %>%
+   gather('1960':'2016', key = "Year", value = "Life Expectancy") %>%
+   filter(!is.na(`Life Expectancy`)) %>%
+   mutate(levels = cut(`Life Expectancy`, breaks = seq(65, 90, by = 5), 
+                       labels = c("65-69", "70-74", "75-79",
+                                "80-84", "85-89")))
+all_final
+```
+
+
+```{r}
+p1 <- all_final %>%
+      filter(Year == 2016) %>%
+      ggplot(aes(map_id = region)) +
+      geom_polygon(aes(x = long, y = lat, group = group),
+                   fill = "white", color = "black") +
+      geom_map(aes(fill = levels), map = map_world) +
+      expand_limits(x = map_world$long, y = map_world$lat) +
+      scale_fill_brewer(palette = "Reds") +
+      labs(title = "Life expectancy around the world",
+          
+           fill = NULL) +
+      ggthemes::theme_map() +
+      coord_map(projection = "mollweide", xlim = c(-180, 180))
+p1
+
+```
+
+
+
+```{r}
+all_final %>%
+      filter(Year == 2016) %>%
+      ggplot(aes(map_id = region)) +
+      geom_polygon(aes(x = long, y = lat, group = group),
+                   fill = "white", color = "black") +
+      geom_map(aes(fill = levels), map = map_world) +
+      expand_limits(x = map_world$long, y = map_world$lat) +
+      scale_fill_brewer(palette = "Reds") +
+      labs(title = "Life expectancy around the world",
+           subtitle = "Year",
+           fill = NULL) +
+      ggthemes::theme_map() +
+      coord_map(projection = "mollweide", xlim = c(-180, 180))
+
+```
+
+
+
+```{r}
+
+
+```
+
+
+
+```{r}
+
+
+```
+
+

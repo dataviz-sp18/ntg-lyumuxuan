@@ -1,0 +1,79 @@
+---
+title: "Map Life Expectancy"
+runtime: shiny
+output: 
+  flexdashboard::flex_dashboard:
+    source_code: embed
+    orientation: rows
+    vertical_layout: fill
+---
+
+```{r setup, include = FALSE}
+# Load packages and initialize data here
+
+library(tidyverse)
+library(flexdashboard)
+library(leaflet)
+library(highcharter)
+library(rgeos)
+
+map_world <- map_data("world") %>%
+  as.tibble() %>%
+  select(-4,-6)
+
+all_df <- read.csv("all_lifeexp.csv", check.names=FALSE)
+names(all_df)[c(1)] = c("region")
+all_df <- all_df %>% mutate(type = "all")
+
+
+
+all_final <- left_join(map_world, all_df, by = "region")
+all_final <- all_final %>%
+   gather('1960':'2016', key = "Year", value = "Life Expectancy")
+
+
+
+```
+
+Input
+=====================================
+
+### Map shaded by annual houe price appreciation. Click to see HPI over time.
+
+```{r input}
+sliderInput('integer', 'Year', 
+              min = 1960, max = 2016, value = 2000)
+
+```
+
+
+Output
+=====================================
+
+```{r, echo = FALSE}
+
+ df <- reactive({
+   all_final[(all_final$Year == input$integer),]
+  })
+
+renderPlot({
+    p <- df %>%
+      ggplot(aes(map_id = region)) +
+      geom_polygon(aes(x = long, y = lat, group = group),
+                   fill = "white", color = "black") +
+      geom_map(aes(fill = levels), map = map_world) +
+      expand_limits(x = map_world$long, y = map_world$lat) +
+      scale_fill_brewer(palette = "Reds") +
+      labs(title = "Life expectancy around the world",
+           subtitle = "Year",
+           fill = NULL) +
+      ggthemes::theme_map() +
+      coord_map(projection = "mollweide", xlim = c(-180, 180))
+    
+    print(p)
+  })
+
+
+```
+
+
